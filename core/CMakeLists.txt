@@ -1,6 +1,9 @@
 add_library(
   glimmer_core STATIC
-  src/date.cpp)
+  src/database.cpp
+  src/date.cpp
+  src/entry.cpp
+  src/migrations.cpp)
 add_library(glimmer::core ALIAS glimmer_core)
 
 target_include_directories(glimmer_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
