@@ -3,7 +3,6 @@
 #include <array>
 #include <charconv>
 #include <cmath>
-#include <cstdint>
 #include <limits>
 
 namespace glimmer::json {
@@ -365,16 +364,11 @@ void writeNumber(std::string& out, double number) {
     out += "null";  // JSON has no NaN/Infinity.
     return;
   }
+  // to_chars without a format gives the shortest text that round-trips
+  // exactly, so whole numbers print as "3" rather than "3.0". No
+  // floating-point comparison needed.
   std::array<char, 32> buffer{};
-  // Integers within 2^53 print without a decimal point.
-  constexpr double kMaxExactInt = 9007199254740992.0;
-  std::to_chars_result result{};
-  if (std::trunc(number) == number && std::fabs(number) < kMaxExactInt) {
-    result = std::to_chars(buffer.data(), buffer.data() + buffer.size(),
-                           static_cast<std::int64_t>(number));
-  } else {
-    result = std::to_chars(buffer.data(), buffer.data() + buffer.size(), number);
-  }
+  const auto result = std::to_chars(buffer.data(), buffer.data() + buffer.size(), number);
   out.append(buffer.data(), result.ptr);
 }
 

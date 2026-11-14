@@ -70,9 +70,9 @@ fs::path MediaLibrary::resolve(std::string_view relativePath) const {
   }
   const auto candidate = (root_ / relative).lexically_normal();
   // The normalized path must still start with the root.
-  const auto [rootEnd, candidateIt] =
+  const auto firstDifference =
       std::mismatch(root_.begin(), root_.end(), candidate.begin(), candidate.end());
-  if (rootEnd != root_.end()) {
+  if (firstDifference.first != root_.end()) {
     throw MediaError("media path escapes the library: '" + std::string{relativePath} + "'");
   }
   return candidate;

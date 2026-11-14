@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 
+#include <cmath>
+
 namespace json = glimmer::json;
 
 TEST(Json, ParsesScalars) {
@@ -62,4 +64,14 @@ TEST(Json, RoundTripsThroughSerialize) {
   const auto text = R"({"model":"auto","messages":[{"role":"user","content":"héllo\n"}],"n":3})";
   EXPECT_EQ(json::serialize(json::parse(text)), text);
   EXPECT_EQ(json::parse(json::serialize(json::parse(text))), json::parse(text));
+}
+
+TEST(Json, SerializesNumbersInShortestRoundTripForm) {
+  EXPECT_EQ(json::serialize(json::Value{3.0}), "3");
+  EXPECT_EQ(json::serialize(json::Value{-42}), "-42");
+  EXPECT_EQ(json::serialize(json::Value{2.5}), "2.5");
+  EXPECT_EQ(json::serialize(json::Value{std::nan("")}), "null");
+  for (const double n : {0.1, 1e20, -1e-7, 1.7976931348623157e308, 9007199254740993.0}) {
+    EXPECT_EQ(json::parse(json::serialize(json::Value{n})).asNumber(), n) << n;
+  }
 }
