@@ -1,8 +1,10 @@
 add_library(
   glimmer_core STATIC
+  src/ai_note_repository.cpp
   src/database.cpp
   src/date.cpp
   src/entry.cpp
+  src/entry_repository.cpp
   src/migrations.cpp)
 add_library(glimmer::core ALIAS glimmer_core)
 
