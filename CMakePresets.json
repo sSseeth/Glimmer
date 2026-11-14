@@ -1,0 +1,66 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": { "CMAKE_EXPORT_COMPILE_COMMANDS": "ON" }
+    },
+    {
+      "name": "dev",
+      "displayName": "Debug + sanitizers (day-to-day development)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "GLIMMER_ENABLE_SANITIZERS": "ON"
+      }
+    },
+    {
+      "name": "dev-whisper",
+      "displayName": "Debug with local transcription (whisper.cpp)",
+      "inherits": "dev",
+      "cacheVariables": { "GLIMMER_WITH_WHISPER": "ON" }
+    },
+    {
+      "name": "core",
+      "displayName": "Core library + tests only (no Qt needed)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "GLIMMER_BUILD_APP": "OFF",
+        "GLIMMER_ENABLE_SANITIZERS": "ON"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Optimised release build",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "GLIMMER_BUILD_TESTS": "OFF",
+        "GLIMMER_WITH_WHISPER": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "dev", "configurePreset": "dev" },
+    { "name": "dev-whisper", "configurePreset": "dev-whisper" },
+    { "name": "core", "configurePreset": "core" },
+    { "name": "release", "configurePreset": "release" }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "core",
+      "configurePreset": "core",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}
