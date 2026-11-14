@@ -2,11 +2,14 @@ add_executable(
   glimmer_tests
   ai_test.cpp
   ai_note_repository_test.cpp
+  audio_test.cpp
   database_test.cpp
   date_test.cpp
   entry_repository_test.cpp
   json_test.cpp
-  migrations_test.cpp)
+  media_library_test.cpp
+  migrations_test.cpp
+  transcriber_test.cpp)
 
 target_link_libraries(glimmer_tests PRIVATE glimmer::core GTest::gtest_main)
 

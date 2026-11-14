@@ -2,11 +2,13 @@ add_library(
   glimmer_core STATIC
   src/ai.cpp
   src/ai_note_repository.cpp
+  src/audio.cpp
   src/database.cpp
   src/date.cpp
   src/entry.cpp
   src/entry_repository.cpp
   src/json.cpp
+  src/media_library.cpp
   src/migrations.cpp)
 add_library(glimmer::core ALIAS glimmer_core)
 
@@ -14,6 +16,13 @@ target_include_directories(glimmer_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inclu
 target_link_libraries(glimmer_core PRIVATE SQLite::SQLite3)
 target_compile_features(glimmer_core PUBLIC cxx_std_20)
 
+if(GLIMMER_WITH_WHISPER)
+  target_sources(glimmer_core PRIVATE src/transcriber_whisper.cpp)
+  target_link_libraries(glimmer_core PRIVATE whisper)
+  target_compile_definitions(glimmer_core PUBLIC GLIMMER_HAS_WHISPER=1)
+else()
+  target_sources(glimmer_core PRIVATE src/transcriber_stub.cpp)
+endif()
 
 if(GLIMMER_WARNINGS_AS_ERRORS)
   glimmer_set_warnings(glimmer_core STRICT WERROR)
