@@ -37,3 +37,7 @@ if(GLIMMER_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)
 endif()
+
+if(GLIMMER_BUILD_APP)
+  add_subdirectory(app)
+endif()
