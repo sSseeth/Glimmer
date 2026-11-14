@@ -1,0 +1,22 @@
+# Build output
+/build/
+/out/
+/compile_commands.json
+CMakeUserPresets.json
+
+# Editors
+.cache/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Python
+__pycache__/
+
+# Never commit diaries, recordings or models
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+/media/
+*.bin
