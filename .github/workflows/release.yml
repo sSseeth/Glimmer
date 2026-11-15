@@ -1,51 +1,232 @@
-name: Release
+name: Package & release
 
-# Push a tag like v0.2.0 to publish a GitHub Release. See docs/releasing.md.
+# Builds installable packages for Windows, macOS and Linux.
+#  - On pull requests that touch the app, build system or installers, the
+#    packages are built, installed with the real install scripts, and kept as
+#    workflow artifacts for 14 days, so packaging is checked before a release.
+#  - Pushing a tag vX.Y.Z also publishes them as a GitHub Release.
+# See docs/releasing.md.
 on:
   push:
     tags: ["v*.*.*"]
+  pull_request:
+    paths:
+      - "app/**"
+      - "core/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - "scripts/install.*"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: package-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  QT_VERSION: "6.8.*"
+
 jobs:
-  build-linux:
+  meta:
+    name: Version
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
+      - id: v
+        run: |
+          project="$(sed -n 's/^  VERSION \([0-9.]*\)$/\1/p' CMakeLists.txt)"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            tag="${GITHUB_REF_NAME}"
+            if [ "${tag#v}" != "$project" ]; then
+              echo "::error::tag $tag does not match CMakeLists.txt VERSION $project"
+              exit 1
+            fi
+            echo "version=$tag" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=v${project}-dev.${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+  linux:
+    name: Linux AppImage
+    needs: meta
+    # Built on the oldest supported Ubuntu so the AppImage runs on newer
+    # distros too (glibc 2.35+: Ubuntu 22.04, Debian 12, Fedora 36 and later).
+    runs-on: ubuntu-22.04
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      CC: gcc-12
+      CXX: g++-12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ninja-build libsqlite3-dev libgtest-dev \
-            qt6-base-dev qt6-multimedia-dev libgl1-mesa-dev
-      - name: Check the tag matches the CMake project version
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          version="$(sed -n 's/^  VERSION \([0-9.]*\)$/\1/p' CMakeLists.txt)"
-          if [ "$tag" != "$version" ]; then
-            echo "::error::tag v$tag does not match CMakeLists.txt VERSION $version"
-            exit 1
-          fi
+          sudo apt-get install -y -qq ninja-build g++-12 libsqlite3-dev libgtest-dev \
+            libgl1-mesa-dev libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 \
+            libpulse0 libfuse2 xvfb
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: qtmultimedia
+          cache: true
       - name: Build and test
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DGLIMMER_WITH_WHISPER=ON
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DGLIMMER_WITH_WHISPER=ON -DGLIMMER_BUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=/usr
           cmake --build build --parallel
           ctest --test-dir build --output-on-failure
-      - name: Package
+          DESTDIR="$PWD/AppDir" cmake --install build --component app
+      - name: Make AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          OUTPUT: glimmer-${{ needs.meta.outputs.version }}-linux-x86_64.AppImage
         run: |
-          cmake --install build --prefix "stage/glimmer-${GITHUB_REF_NAME}"
-          cp README.md LICENSE CHANGELOG.md "stage/glimmer-${GITHUB_REF_NAME}/"
-          tar -C stage -czf "glimmer-${GITHUB_REF_NAME}-linux-x86_64.tar.gz" "glimmer-${GITHUB_REF_NAME}"
-          sha256sum glimmer-*.tar.gz > SHA256SUMS
+          export QMAKE="$QT_ROOT_DIR/bin/qmake"
+          base=https://github.com/linuxdeploy
+          curl -fsSLO "$base/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+          curl -fsSLO "$base/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage"
+          chmod +x linuxdeploy*.AppImage
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage \
+            --executable AppDir/usr/bin/glimmer \
+            --desktop-file AppDir/usr/share/applications/glimmer.desktop \
+            --icon-file AppDir/usr/share/icons/hicolor/512x512/apps/glimmer.png
+          mkdir -p dist && mv "$OUTPUT" dist/
+      - name: Smoke test the AppImage
+        run: xvfb-run -a ./dist/glimmer-*-linux-x86_64.AppImage --appimage-extract-and-run --version
+      - name: Test install.sh with this package
+        run: |
+          (cd dist && sha256sum glimmer-* > SHA256SUMS)
+          bash scripts/install.sh --from dist
+          xvfb-run -a "$HOME/.local/bin/glimmer" --version
+          test -f "$HOME/.local/share/applications/glimmer.desktop"
+          bash scripts/install.sh --uninstall
+          test ! -e "$HOME/.local/bin/glimmer"
+          rm dist/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: linux
-          path: |
-            glimmer-*.tar.gz
-            SHA256SUMS
+          name: package-linux
+          path: dist/*
+          retention-days: 14
+
+  macos:
+    name: macOS dmg
+    needs: meta
+    runs-on: macos-14  # Apple Silicon
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: brew install ninja googletest
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: qtmultimedia
+          cache: true
+      - name: Build and test
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DGLIMMER_WITH_WHISPER=ON -DGLIMMER_BUILD_TESTS=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
+          cmake --build build --parallel
+          ctest --test-dir build --output-on-failure
+      - name: Bundle Qt and make dmg
+        run: |
+          app=build/app/Glimmer.app
+          macdeployqt "$app"
+          # Apple Silicon refuses to run unsigned code. Ad-hoc sign the bundle
+          # (no Apple Developer ID; see docs/releasing.md for notarization).
+          codesign --force --deep --sign - "$app"
+          codesign --verify --deep --strict "$app"
+          "$app/Contents/MacOS/Glimmer" --version
+          mkdir -p dmg dist
+          cp -R "$app" dmg/
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname Glimmer -srcfolder dmg -ov -format UDZO \
+            "dist/glimmer-${VERSION}-macos-arm64.dmg"
+      - name: Test install.sh with this package
+        run: |
+          (cd dist && shasum -a 256 glimmer-* > SHA256SUMS)
+          bash scripts/install.sh --from dist
+          "$HOME/.local/bin/glimmer" --version
+          bash scripts/install.sh --uninstall
+          test ! -e /Applications/Glimmer.app
+          rm dist/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-macos
+          path: dist/*
+          retention-days: 14
+
+  windows:
+    name: Windows zip
+    needs: meta
+    runs-on: windows-2022
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: win64_msvc2022_64
+          modules: qtmultimedia
+          cache: true
+      - name: Install SQLite and GoogleTest (vcpkg)
+        run: vcpkg install sqlite3:x64-windows gtest:x64-windows
+      - name: Build and test
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release `
+            -DGLIMMER_WITH_WHISPER=ON -DGLIMMER_BUILD_TESTS=ON `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          cmake --build build --parallel
+          ctest --test-dir build --output-on-failure
+      - name: Bundle Qt, runtime and installer into a zip
+        run: |
+          $stage = 'stage/glimmer'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item build/app/glimmer.exe $stage
+          Copy-Item build/app/*.dll $stage   # sqlite3.dll, copied there by vcpkg
+          windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw "$stage/glimmer.exe"
+          # MSVC runtime, so users don't need the Visual C++ Redistributable.
+          Copy-Item "$env:VCToolsRedistDir\x64\Microsoft.VC143.CRT\*.dll" $stage
+          Copy-Item scripts/install.ps1, LICENSE, README.md $stage
+          foreach ($f in 'glimmer.exe', 'sqlite3.dll', 'Qt6Core.dll', 'Qt6Multimedia.dll', 'platforms/qwindows.dll', 'vcruntime140.dll') {
+            if (-not (Test-Path "$stage/$f")) { throw "package is missing $f" }
+          }
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path $stage -DestinationPath "dist/glimmer-$env:VERSION-windows-x64.zip"
+      - name: Test install.ps1 with this package
+        run: |
+          Push-Location dist
+          Get-ChildItem glimmer-* | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content SHA256SUMS
+          Pop-Location
+          ./scripts/install.ps1 -From dist
+          $dir = Join-Path $env:LOCALAPPDATA 'Programs\Glimmer'
+          if (-not (Test-Path "$dir\glimmer.exe")) { throw 'glimmer.exe was not installed' }
+          if (-not (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Glimmer')) { throw 'no uninstall entry' }
+          & "$dir\install.ps1" -Uninstall
+          if (Test-Path $dir) { throw 'uninstall left files behind' }
+          Remove-Item dist/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-windows
+          path: dist/*
+          retention-days: 14
 
   publish:
-    needs: build-linux
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [meta, linux, macos, windows]
     runs-on: ubuntu-24.04
     permissions:
       contents: write  # create the release
@@ -53,8 +234,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: linux
-      - name: Extract release notes from CHANGELOG.md
+          pattern: package-*
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: cd dist && sha256sum glimmer-* > SHA256SUMS && cat SHA256SUMS
+      - name: Release notes from CHANGELOG.md
         run: |
           version="${GITHUB_REF_NAME#v}"
           awk -v v="$version" '
@@ -62,10 +247,26 @@ jobs:
             on && /^## \[/ { exit }
             on { print }
           ' CHANGELOG.md > notes.md
-          [ -s notes.md ] || echo "See CHANGELOG.md" > notes.md
-      - name: Create GitHub release
+          cat >> notes.md <<'EOF'
+
+          ## Install
+
+          **Windows (PowerShell):**
+          ```powershell
+          irm https://raw.githubusercontent.com/sSseeth/Glimmer/main/scripts/install.ps1 | iex
+          ```
+
+          **macOS (Apple Silicon) / Linux (x86_64):**
+          ```sh
+          curl -fsSL https://raw.githubusercontent.com/sSseeth/Glimmer/main/scripts/install.sh | bash
+          ```
+
+          Or download a file below and verify it against `SHA256SUMS`. See the
+          [installation guide](https://github.com/sSseeth/Glimmer/blob/main/docs/installing.md).
+          EOF
+      - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" glimmer-*.tar.gz SHA256SUMS \
-            --title "glimmer $GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "Glimmer $GITHUB_REF_NAME" --notes-file notes.md --verify-tag
