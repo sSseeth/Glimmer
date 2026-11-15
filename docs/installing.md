@@ -6,7 +6,7 @@ Prebuilt downloads are published on the
 | Platform | Download | Requirements |
 |---|---|---|
 | Windows | `glimmer-vX.Y.Z-windows-x64.zip` | Windows 10 or 11, 64-bit |
-| macOS | `glimmer-vX.Y.Z-macos-arm64.dmg` | macOS 12+ on Apple Silicon (M1 or later) |
+| macOS | `glimmer-vX.Y.Z-macos-arm64.dmg` | macOS 13.3+ on Apple Silicon (M1 or later) |
 | Linux | `glimmer-vX.Y.Z-linux-x86_64.AppImage` | x86-64 with glibc 2.35+ (Ubuntu 22.04, Debian 12, Fedora 36 or newer) |
 
 Voice transcription is built into every download. It needs a 64-bit CPU

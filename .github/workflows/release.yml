@@ -132,7 +132,7 @@ jobs:
       - name: Build and test
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-            -DGLIMMER_WITH_WHISPER=ON -DGLIMMER_BUILD_TESTS=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
+            -DGLIMMER_WITH_WHISPER=ON -DGLIMMER_BUILD_TESTS=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=13.3
           cmake --build build --parallel
           ctest --test-dir build --output-on-failure
       - name: Bundle Qt and make dmg

@@ -50,7 +50,7 @@ troubleshooting? See the **[installation guide](docs/installing.md)**.
 | Platform | Package | Needs |
 |---|---|---|
 | Windows | `.zip` | Windows 10/11, 64-bit |
-| macOS | `.dmg` | macOS 12+, Apple Silicon |
+| macOS | `.dmg` | macOS 13.3+, Apple Silicon |
 | Linux | `.AppImage` | x86-64, glibc 2.35+ (Ubuntu 22.04+, Debian 12+, Fedora 36+) |
 
 ## Build from source

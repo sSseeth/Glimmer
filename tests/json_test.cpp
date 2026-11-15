@@ -75,3 +75,10 @@ TEST(Json, SerializesNumbersInShortestRoundTripForm) {
     EXPECT_EQ(json::parse(json::serialize(json::Value{n})).asNumber(), n) << n;
   }
 }
+
+TEST(Json, ParsesNumbersIndependentOfLocaleAndRejectsOverflow) {
+  EXPECT_DOUBLE_EQ(json::parse("3.25").asNumber(), 3.25);
+  EXPECT_DOUBLE_EQ(json::parse("-1.5E-3").asNumber(), -0.0015);
+  EXPECT_DOUBLE_EQ(json::parse("12345678901234567890").asNumber(), 12345678901234567890.0);
+  EXPECT_THROW((void)json::parse("1e400"), json::ParseError);
+}
