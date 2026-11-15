@@ -32,7 +32,7 @@ Target: the default branch. Enable:
 - **Require conversation resolution before merging**
 - **Require status checks to pass**, adding:
   - `clang-format`
-  - `core (ubuntu-24.04, gcc)`, `core (ubuntu-24.04, clang)`, `core (macos-14, apple-clang)`, `core (windows-2022, msvc)`
+  - `core (ubuntu-24.04, gcc)`, `core (ubuntu-24.04, clang)`, `core (macos-15, apple-clang)`, `core (windows-2022, msvc)`
   - `clang-tidy`
   - `app (Linux, whisper=OFF)`, `app (Linux, whisper=ON)`
   - `AI disclosure`, `Conventional commits`

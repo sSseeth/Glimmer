@@ -35,7 +35,7 @@ jobs:
         include:
           - { os: ubuntu-24.04, compiler: gcc, cc: gcc, cxx: g++ }
           - { os: ubuntu-24.04, compiler: clang, cc: clang-18, cxx: clang++-18 }
-          - { os: macos-14, compiler: apple-clang, cc: clang, cxx: clang++ }
+          - { os: macos-15, compiler: apple-clang, cc: clang, cxx: clang++ }
     env:
       CC: ${{ matrix.cc }}
       CXX: ${{ matrix.cxx }}

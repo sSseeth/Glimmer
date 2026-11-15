@@ -10,7 +10,7 @@ Before 1.0, minor versions may change things.
 | File | Built on | How |
 |---|---|---|
 | `glimmer-vX.Y.Z-windows-x64.zip` | windows-2022, MSVC | `windeployqt` + MSVC runtime + `install.ps1` |
-| `glimmer-vX.Y.Z-macos-arm64.dmg` | macos-14 | `macdeployqt`, ad-hoc signed, `hdiutil` |
+| `glimmer-vX.Y.Z-macos-arm64.dmg` | macos-15 | `macdeployqt`, ad-hoc signed, `hdiutil` |
 | `glimmer-vX.Y.Z-linux-x86_64.AppImage` | ubuntu-22.04 | `linuxdeploy` + Qt plugin |
 | `SHA256SUMS` | | checksums of the three packages |
 
