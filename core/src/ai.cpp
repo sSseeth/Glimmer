@@ -2,6 +2,8 @@
 
 #include "glimmer/json.hpp"
 
+#include "strings.hpp"
+
 #include <deque>
 #include <ranges>
 
@@ -70,13 +72,13 @@ std::string renderEntries(const std::vector<Entry>& entries, std::size_t maxChar
   std::size_t total = 0;
   for (const auto& entry : std::views::reverse(entries)) {
     std::string block =
-        "## " + toIsoString(entry.date) + " (" + std::string{toString(entry.kind)} + ")";
+        detail::concat("## ", toIsoString(entry.date), " (", toString(entry.kind), ")");
     if (!entry.title.empty()) {
-      block += " - " + entry.title;
+      block += detail::concat(" - ", entry.title);
     }
     block += '\n';
     if (entry.kind == EntryKind::Collage) {
-      block += "[collage of " + std::to_string(entry.collage.size()) + " image(s)]";
+      block += detail::concat("[collage of ", std::to_string(entry.collage.size()), " image(s)]");
       if (!entry.body.empty()) {
         block += ' ' + entry.body;
       }
@@ -100,8 +102,8 @@ std::string renderEntries(const std::vector<Entry>& entries, std::size_t maxChar
     out += block;
   }
   if (blocks.size() < entries.size()) {
-    out = "[" + std::to_string(entries.size() - blocks.size()) +
-          " older entries omitted for length]\n\n" + out;
+    out = detail::concat("[", std::to_string(entries.size() - blocks.size()),
+                         " older entries omitted for length]\n\n", out);
   }
   return out;
 }
@@ -121,9 +123,11 @@ ChatRequest PromptBuilder::summarise(const std::vector<Entry>& entries, Date fro
   request.temperature = 0.3;
   request.messages.push_back({"system", std::string{systemPrompt()}});
 
-  std::string user = "Summarise my diary from " + toIsoString(from) + " to " + toIsoString(to) +
-                     ". Give a short overview paragraph, then up to five bullet points of "
-                     "notable moments, then one line about recurring themes or moods.\n\n";
+  std::string user =
+      detail::concat("Summarise my diary from ", toIsoString(from), " to ", toIsoString(to),
+                     ". Give a short overview paragraph, then up to five bullet "
+                     "points of notable moments, then one line about recurring "
+                     "themes or moods.\n\n");
   if (entries.empty()) {
     user += "(There are no entries in this period.)";
   } else {
@@ -140,12 +144,12 @@ ChatRequest PromptBuilder::journalingPrompt(const std::vector<Entry>& recentEntr
   request.temperature = 0.9;
   request.messages.push_back({"system", std::string{systemPrompt()}});
 
-  std::string user = "Today is " + toIsoString(today) +
-                     ". Suggest one short, specific journaling prompt for today (one or two "
-                     "sentences, no preamble).";
+  std::string user = detail::concat("Today is ", toIsoString(today),
+                                    ". Suggest one short, specific journaling prompt for today "
+                                    "(one or two sentences, no preamble).");
   if (!recentEntries.empty()) {
-    user += " You may build on threads from my recent entries:\n\n" +
-            renderEntries(recentEntries, 8'000);
+    user += detail::concat(" You may build on threads from my recent entries:\n\n",
+                           renderEntries(recentEntries, 8'000));
   }
   request.messages.push_back({"user", std::move(user)});
   return request;

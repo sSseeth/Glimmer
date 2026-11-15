@@ -1,5 +1,7 @@
 #include "glimmer/json.hpp"
 
+#include "strings.hpp"
+
 #include <array>
 #include <charconv>
 #include <cmath>
@@ -10,7 +12,8 @@
 namespace glimmer::json {
 
 ParseError::ParseError(const std::string& message, std::size_t offset)
-    : std::runtime_error(message + " at offset " + std::to_string(offset)), offset_(offset) {}
+    : std::runtime_error(detail::concat(message, " at offset ", std::to_string(offset))),
+      offset_(offset) {}
 
 const Value* Value::find(std::string_view key) const {
   if (!isObject()) {

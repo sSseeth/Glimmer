@@ -1,5 +1,7 @@
 #include "glimmer/entry_repository.hpp"
 
+#include "strings.hpp"
+
 #include <map>
 #include <stdexcept>
 
@@ -81,7 +83,7 @@ void EntryRepository::update(Entry& entry) {
       .bind(6, entry.id);
   stmt.run();
   if (db_.changes() == 0) {
-    throw std::invalid_argument("no entry with id " + std::to_string(entry.id));
+    throw std::invalid_argument(detail::concat("no entry with id ", std::to_string(entry.id)));
   }
   saveCollage(entry);
   tx.commit();

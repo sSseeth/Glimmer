@@ -1,5 +1,7 @@
 #include "glimmer/database.hpp"
 
+#include "strings.hpp"
+
 #include <sqlite3.h>
 
 #include <limits>
@@ -184,7 +186,7 @@ int Database::userVersion() {
 
 void Database::setUserVersion(int version) {
   // PRAGMA arguments cannot be bound as parameters, so format the integer.
-  execute("PRAGMA user_version = " + std::to_string(version) + ";");
+  execute(detail::concat("PRAGMA user_version = ", std::to_string(version), ";"));
 }
 
 // --- Transaction -------------------------------------------------------------
