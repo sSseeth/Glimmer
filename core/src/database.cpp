@@ -15,6 +15,13 @@ std::string describe(sqlite3* db, std::string_view what, int code) {
   return message;
 }
 
+/// SQLite expects UTF-8 file names. path::string() would use the ANSI code
+/// page on Windows and break non-ASCII user folders.
+std::string utf8(const std::filesystem::path& path) {
+  const auto u8 = path.u8string();
+  return {u8.begin(), u8.end()};
+}
+
 int checkedLength(std::string_view text) {
   if (text.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
     throw DatabaseError("string too large for SQLite", SQLITE_TOOBIG);
@@ -135,7 +142,7 @@ Database::Database(OpenTag /*tag*/, const std::string& sqliteFilename) {
   execute("PRAGMA foreign_keys = ON;");
 }
 
-Database::Database(const std::filesystem::path& path) : Database(OpenTag{}, path.string()) {
+Database::Database(const std::filesystem::path& path) : Database(OpenTag{}, utf8(path)) {
   execute("PRAGMA journal_mode = WAL;");
 }
 

@@ -148,6 +148,19 @@ TEST(Database, FileDatabasePersistsAcrossConnections) {
   }
 }
 
+TEST(Database, HandlesNonAsciiPaths) {
+  const auto dir =
+      std::filesystem::temp_directory_path() / std::filesystem::path{u8"glimmer-日記-test"};
+  std::filesystem::remove_all(dir);
+  std::filesystem::create_directories(dir);
+  {
+    Database db{dir / "diary.sqlite"};
+    db.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT, score REAL);");
+  }
+  EXPECT_TRUE(std::filesystem::exists(dir / "diary.sqlite"));
+  std::filesystem::remove_all(dir);
+}
+
 TEST(Database, OpeningAnUnwritablePathThrows) {
   EXPECT_THROW(Database{std::filesystem::path{"/nonexistent-dir/glimmer.sqlite"}}, DatabaseError);
 }
