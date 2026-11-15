@@ -39,7 +39,8 @@ you didn't run it.
 - Keep your generated changes in commits separate from the human's own
   edits.
 - In PR descriptions, fill in the "AI assistance" section truthfully.
-- Never push to `main`, force-push shared branches, or merge PRs.
+- Never push to `main`, force-push shared branches, merge PRs, or create
+  tags or releases.
 
 ## Things to ask the human about first
 

@@ -6,6 +6,28 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Downloadable packages for every release: Windows `.zip`, macOS
+  (Apple Silicon) `.dmg` and Linux `.AppImage`, all with voice transcription
+  built in.
+- One-line installers: `install.ps1` (PowerShell) and `install.sh`
+  (macOS/Linux). They verify SHA-256 checksums, install per-user with
+  OS integration, update in place and uninstall without touching the diary.
+- App icon, Linux desktop entry, Windows executable icon, and a macOS bundle
+  with the microphone-permission prompt.
+- Installation guide (`docs/installing.md`) and an Install section in the
+  README.
+- CI builds and tests the core with MSVC on Windows, and builds and
+  installs all three packages on pull requests that affect them.
+
+### Changed
+
+- whisper.cpp is linked statically without `-march=native` or OpenMP, so
+  release binaries run on any AVX2-capable x86-64 CPU or Apple Silicon.
+- The database path is passed to SQLite as UTF-8, fixing diaries in
+  folders with non-ASCII names on Windows.
+
 ## [0.1.0] - 2026-11-14
 
 ### Added
