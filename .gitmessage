@@ -1,0 +1,15 @@
+
+# type(scope): summary in the imperative, <= 72 chars
+#
+# Types: feat fix docs style refactor perf test build ci chore revert
+# Scopes: core app ai voice collage calendar db ci docs
+#
+# Body: WHY the change is needed, not what the diff already shows.
+#
+# --- AI disclosure (AI_POLICY.md) ---------------------------------------
+# If an AI tool wrote a non-trivial part of THIS commit, add a trailer:
+#
+# Assisted-by: <tool>:<model>        e.g. Assisted-by: Claude:claude-opus-5-5
+#
+# Never credit an AI with Co-authored-by: or Signed-off-by:. You are the
+# author, and you are responsible for every line.

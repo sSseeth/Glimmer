@@ -1,0 +1,38 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a day…
+        2. Click…
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: glimmer version
+      description: Output of `glimmer --version`, or the commit SHA.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and Qt version
+      placeholder: Ubuntu 24.04, Qt 6.4.2
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Please remove anything private from your diary first.
+      render: text

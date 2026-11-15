@@ -1,0 +1,36 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "17 3 * * 1"  # weekly, Monday 03:17 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (C/C++)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write  # upload results to the Security tab
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: c-cpp
+          build-mode: manual
+          queries: security-and-quality
+      - name: Build core
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ninja-build libsqlite3-dev libgtest-dev
+          cmake -S . -B build -G Ninja -DGLIMMER_BUILD_APP=OFF
+          cmake --build build --parallel
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:c-cpp

@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege: jobs only read the repo unless they say otherwise.
+permissions:
+  contents: read
+
+# A new push to the same branch/PR cancels the previous run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: clang-format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check formatting
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq clang-format-18
+          git ls-files '*.cpp' '*.hpp' | xargs clang-format-18 --dry-run --Werror
+
+  core:
+    name: core (${{ matrix.os }}, ${{ matrix.compiler }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, compiler: gcc, cc: gcc, cxx: g++ }
+          - { os: ubuntu-24.04, compiler: clang, cc: clang-18, cxx: clang++-18 }
+          - { os: macos-14, compiler: apple-clang, cc: clang, cxx: clang++ }
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ninja-build libsqlite3-dev libgtest-dev libclang-rt-18-dev
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja googletest  # SQLite ships with the macOS SDK
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DGLIMMER_BUILD_APP=OFF
+          -DGLIMMER_ENABLE_SANITIZERS=ON
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ninja-build libsqlite3-dev libgtest-dev clang-18 clang-tidy-18
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_C_COMPILER=clang-18
+          -DGLIMMER_BUILD_APP=OFF
+      - name: Run clang-tidy on core
+        run: run-clang-tidy-18 -p build -quiet 'core/src/.*\.cpp$'
+
+  app:
+    name: app (Linux, whisper=${{ matrix.whisper }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        whisper: [OFF, ON]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ninja-build libsqlite3-dev libgtest-dev \
+            qt6-base-dev qt6-multimedia-dev libgl1-mesa-dev
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DGLIMMER_WITH_WHISPER=${{ matrix.whisper }}
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Smoke test (app starts and reports its version)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ./build/app/glimmer --version

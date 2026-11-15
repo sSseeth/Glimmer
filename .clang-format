@@ -1,0 +1,21 @@
+# Google style with a wider line. Run `clang-format -i` (or your Neovim
+# formatter on save); CI fails if any file isn't formatted.
+BasedOnStyle: Google
+ColumnLimit: 100
+IndentWidth: 2
+DerivePointerAlignment: false
+PointerAlignment: Left
+IncludeBlocks: Regroup
+IncludeCategories:
+  # 1. The header this .cpp implements comes first automatically.
+  # 2. Project headers
+  - Regex: '^"glimmer/'
+    Priority: 2
+  - Regex: '^"'
+    Priority: 3
+  # 3. Third-party angle-bracket headers (Qt, sqlite, gtest, whisper)
+  - Regex: '^<(Q|sqlite|gtest|whisper)'
+    Priority: 4
+  # 4. Standard library
+  - Regex: '^<'
+    Priority: 5
