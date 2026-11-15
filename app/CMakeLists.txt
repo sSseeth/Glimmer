@@ -34,7 +34,29 @@ target_link_libraries(
 
 target_compile_definitions(glimmer PRIVATE GLIMMER_VERSION="${PROJECT_VERSION}")
 
+qt_add_resources(glimmer "icons" PREFIX "/" FILES resources/glimmer.png)
+
+# --- Per-platform packaging metadata -------------------------------------------
 set_target_properties(glimmer PROPERTIES WIN32_EXECUTABLE ON MACOSX_BUNDLE ON)
+
+if(WIN32)
+  target_sources(glimmer PRIVATE resources/glimmer.rc)  # .exe icon
+endif()
+
+if(APPLE)
+  set(icns "${CMAKE_CURRENT_SOURCE_DIR}/resources/glimmer.icns")
+  target_sources(glimmer PRIVATE "${icns}")
+  set_source_files_properties("${icns}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+  set_target_properties(
+    glimmer
+    PROPERTIES OUTPUT_NAME Glimmer  # -> Glimmer.app
+               MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/resources/Info.plist.in"
+               MACOSX_BUNDLE_BUNDLE_NAME Glimmer
+               MACOSX_BUNDLE_GUI_IDENTIFIER io.github.ssseeth.glimmer
+               MACOSX_BUNDLE_ICON_FILE glimmer.icns
+               MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+               MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}")
+endif()
 
 if(GLIMMER_APP_WARNINGS_AS_ERRORS)
   glimmer_set_warnings(glimmer RELAXED WERROR)
@@ -43,7 +65,20 @@ else()
 endif()
 glimmer_enable_sanitizers(glimmer)
 
+# Packaging installs only COMPONENT app (not third-party headers/libs).
 install(
   TARGETS glimmer
-  BUNDLE DESTINATION .
-  RUNTIME DESTINATION bin)
+  BUNDLE DESTINATION . COMPONENT app
+  RUNTIME DESTINATION bin COMPONENT app)
+
+if(UNIX AND NOT APPLE)
+  # Freedesktop integration: app menus, launchers and the AppImage use these.
+  install(
+    FILES resources/glimmer.desktop
+    DESTINATION share/applications
+    COMPONENT app)
+  install(
+    FILES resources/glimmer.png
+    DESTINATION share/icons/hicolor/512x512/apps
+    COMPONENT app)
+endif()

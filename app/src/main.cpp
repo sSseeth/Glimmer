@@ -3,6 +3,7 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QIcon>
 #include <QMessageBox>
 #include <QStandardPaths>
 
@@ -14,6 +15,8 @@ int main(int argc, char* argv[]) {
   QApplication::setOrganizationName(QStringLiteral("glimmer"));
   QApplication::setApplicationName(QStringLiteral("glimmer"));
   QApplication::setApplicationVersion(QStringLiteral(GLIMMER_VERSION));
+  QApplication::setWindowIcon(QIcon(QStringLiteral(":/resources/glimmer.png")));
+  QGuiApplication::setDesktopFileName(QStringLiteral("glimmer"));  // Wayland icon lookup
 
   QCommandLineParser parser;
   parser.setApplicationDescription(QStringLiteral("A small, private desktop diary."));
