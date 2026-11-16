@@ -19,8 +19,8 @@ jobs:
       contents: read
       security-events: write  # upload results to the Security tab
     steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
           build-mode: manual
@@ -31,6 +31,6 @@ jobs:
           sudo apt-get install -y -qq ninja-build libsqlite3-dev libgtest-dev
           cmake -S . -B build -G Ninja -DGLIMMER_BUILD_APP=OFF
           cmake --build build --parallel
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
         with:
           category: /language:c-cpp
