@@ -36,7 +36,7 @@ jobs:
     outputs:
       version: ${{ steps.v.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: v
         run: |
           project="$(sed -n 's/^  VERSION \([0-9.]*\)$/\1/p' CMakeLists.txt)"
@@ -62,7 +62,7 @@ jobs:
       CC: gcc-12
       CXX: g++-12
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install build dependencies
         run: |
           sudo apt-get update -qq
@@ -108,7 +108,7 @@ jobs:
           bash scripts/install.sh --uninstall
           test ! -e "$HOME/.local/bin/glimmer"
           rm dist/SHA256SUMS
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: package-linux
           path: dist/*
@@ -121,7 +121,7 @@ jobs:
     env:
       VERSION: ${{ needs.meta.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install build dependencies
         run: brew install ninja googletest
       - uses: jurplel/install-qt-action@v4
@@ -157,7 +157,7 @@ jobs:
           bash scripts/install.sh --uninstall
           test ! -e /Applications/Glimmer.app
           rm dist/SHA256SUMS
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: package-macos
           path: dist/*
@@ -173,7 +173,7 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ilammy/msvc-dev-cmd@v1
       - uses: jurplel/install-qt-action@v4
         with:
@@ -217,7 +217,7 @@ jobs:
           & "$dir\install.ps1" -Uninstall
           if (Test-Path $dir) { throw 'uninstall left files behind' }
           Remove-Item dist/SHA256SUMS
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: package-windows
           path: dist/*
@@ -231,8 +231,8 @@ jobs:
     permissions:
       contents: write  # create the release
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           pattern: package-*
           path: dist
