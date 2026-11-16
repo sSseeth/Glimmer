@@ -35,7 +35,7 @@ jobs:
         include:
           - { os: ubuntu-24.04, compiler: gcc, cc: gcc, cxx: g++ }
           - { os: ubuntu-24.04, compiler: clang, cc: clang-18, cxx: clang++-18 }
-          - { os: macos-14, compiler: apple-clang, cc: clang, cxx: clang++ }
+          - { os: macos-15, compiler: apple-clang, cc: clang, cxx: clang++ }
     env:
       CC: ${{ matrix.cc }}
       CXX: ${{ matrix.cxx }}
@@ -55,6 +55,26 @@ jobs:
           -DCMAKE_BUILD_TYPE=Debug
           -DGLIMMER_BUILD_APP=OFF
           -DGLIMMER_ENABLE_SANITIZERS=ON
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  core-windows:
+    name: core (windows-2022, msvc)
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install SQLite and GoogleTest (vcpkg)
+        run: vcpkg install sqlite3:x64-windows gtest:x64-windows
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DGLIMMER_BUILD_APP=OFF
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
       - name: Build
         run: cmake --build build --parallel
       - name: Test

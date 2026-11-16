@@ -1,0 +1,2 @@
+// Windows resources: the executable's icon (Explorer, taskbar, Start menu).
+IDI_ICON1 ICON "glimmer.ico"

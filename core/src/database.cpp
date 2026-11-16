@@ -1,5 +1,7 @@
 #include "glimmer/database.hpp"
 
+#include "strings.hpp"
+
 #include <sqlite3.h>
 
 #include <limits>
@@ -13,6 +15,13 @@ std::string describe(sqlite3* db, std::string_view what, int code) {
   message += ": ";
   message += (db != nullptr) ? sqlite3_errmsg(db) : sqlite3_errstr(code);
   return message;
+}
+
+/// SQLite expects UTF-8 file names. path::string() would use the ANSI code
+/// page on Windows and break non-ASCII user folders.
+std::string utf8(const std::filesystem::path& path) {
+  const auto u8 = path.u8string();
+  return {u8.begin(), u8.end()};
 }
 
 int checkedLength(std::string_view text) {
@@ -135,7 +144,7 @@ Database::Database(OpenTag /*tag*/, const std::string& sqliteFilename) {
   execute("PRAGMA foreign_keys = ON;");
 }
 
-Database::Database(const std::filesystem::path& path) : Database(OpenTag{}, path.string()) {
+Database::Database(const std::filesystem::path& path) : Database(OpenTag{}, utf8(path)) {
   execute("PRAGMA journal_mode = WAL;");
 }
 
@@ -177,7 +186,7 @@ int Database::userVersion() {
 
 void Database::setUserVersion(int version) {
   // PRAGMA arguments cannot be bound as parameters, so format the integer.
-  execute("PRAGMA user_version = " + std::to_string(version) + ";");
+  execute(detail::concat("PRAGMA user_version = ", std::to_string(version), ";"));
 }
 
 // --- Transaction -------------------------------------------------------------

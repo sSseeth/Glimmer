@@ -1,14 +1,19 @@
 #include "glimmer/json.hpp"
 
+#include "strings.hpp"
+
 #include <array>
 #include <charconv>
 #include <cmath>
 #include <limits>
+#include <locale>
+#include <sstream>
 
 namespace glimmer::json {
 
 ParseError::ParseError(const std::string& message, std::size_t offset)
-    : std::runtime_error(message + " at offset " + std::to_string(offset)), offset_(offset) {}
+    : std::runtime_error(detail::concat(message, " at offset ", std::to_string(offset))),
+      offset_(offset) {}
 
 const Value* Value::find(std::string_view key) const {
   if (!isObject()) {
@@ -190,11 +195,14 @@ class Parser {
         ++pos_;
       }
     }
+    // Not std::from_chars: Apple's libc++ doesn't implement it for
+    // floating point. A stream with the classic locale always uses '.' as
+    // the decimal separator, whatever the user's locale is.
+    std::istringstream stream{std::string{text_.substr(start, pos_ - start)}};
+    stream.imbue(std::locale::classic());
     double number = 0.0;
-    const char* first = text_.data() + start;
-    const char* last = text_.data() + pos_;
-    const auto [ptr, ec] = std::from_chars(first, last, number);
-    if (ec != std::errc{} || ptr != last) {
+    stream >> number;
+    if (stream.fail() || !stream.eof()) {
       fail("number out of range");
     }
     return Value{number};

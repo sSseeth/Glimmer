@@ -24,7 +24,36 @@ A small, private desktop diary written in C++20 and Qt 6.
 - **Your data stays local:** one SQLite file plus a media folder, so backing
   up means copying one directory.
 
-## Build
+## Install
+
+**Windows** (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/sSseeth/Glimmer/main/scripts/install.ps1 | iex
+```
+
+**macOS** (Apple Silicon) and **Linux** (x86_64):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sSseeth/Glimmer/main/scripts/install.sh | bash
+```
+
+The installers fetch the latest release, verify its SHA-256 checksum, and
+install it for your user only (no admin rights needed), with a Start menu,
+Launchpad or app-menu entry. Run them again to update. To uninstall, use
+Settings → Apps on Windows, or add `-s -- --uninstall` to the bash command.
+Your diary is never deleted.
+
+Prefer a manual download, want to read the script first, or need
+troubleshooting? See the **[installation guide](docs/installing.md)**.
+
+| Platform | Package | Needs |
+|---|---|---|
+| Windows | `.zip` | Windows 10/11, 64-bit |
+| macOS | `.dmg` | macOS 13.3+, Apple Silicon |
+| Linux | `.AppImage` | x86-64, glibc 2.35+ (Ubuntu 22.04+, Debian 12+, Fedora 36+) |
+
+## Build from source
 
 You need CMake ≥ 3.25, Ninja, a C++20 compiler (GCC 13, Clang 16+ or a
 recent Apple Clang), SQLite 3 and Qt ≥ 6.4 (Widgets, Multimedia, Network,
@@ -49,15 +78,18 @@ transcription), `release`. See [docs/development.md](docs/development.md).
 
 ### Voice transcription
 
-Transcription is optional because whisper.cpp takes a few minutes to compile:
+The prebuilt downloads include transcription. In a source build it's
+optional, because whisper.cpp takes a few minutes to compile:
 
 ```sh
 cmake --preset dev-whisper && cmake --build --preset dev-whisper
 ```
 
-Then download a model (e.g. `ggml-base.en.bin`, about 150 MB) using the
-script in the whisper.cpp repo (`models/download-ggml-model.sh base.en`), and
-choose it under **File → Settings → Whisper model**.
+Either way, download a speech model once, e.g.
+[ggml-base.en.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin)
+(about 150 MB), and choose it under **File → Settings → Whisper model**.
+
+## Optional setup
 
 ### AI companion (OmniRoute)
 
@@ -80,7 +112,7 @@ entries in the period you asked about.
 | macOS | `~/Library/Application Support/glimmer/glimmer/` |
 | Windows | `%APPDATA%\glimmer\glimmer\` |
 
-Start with `--data-dir <folder>` to use a different one, e.g. a throwaway
+Uninstalling never touches this folder. Start with `--data-dir <folder>` to use a different one, e.g. a throwaway
 diary for testing.
 
 ## Project layout

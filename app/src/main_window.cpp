@@ -64,7 +64,7 @@ QString entryLabel(const glimmer::Entry& entry, bool withDate) {
 
 MainWindow::MainWindow(DiaryStore& store, QWidget* parent)
     : QMainWindow(parent), store_(store), client_(new OmniRouteClient(this)) {
-  setWindowTitle(QStringLiteral("glimmer"));
+  setWindowTitle(QStringLiteral("Glimmer"));
   buildUi();
   buildMenus();
   onDateSelected();

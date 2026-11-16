@@ -27,6 +27,13 @@ Only the latest release gets security fixes before 1.0.
 - The diary database is **not encrypted**. Use full-disk encryption if
   your device could be lost or shared.
 
+## Verifying downloads
+
+Every release includes `SHA256SUMS`, and both install scripts refuse to
+install a package whose checksum doesn't match. Packages are built only by
+the public GitHub Actions workflow in this repository. They aren't signed
+with a paid certificate yet (see `docs/releasing.md`).
+
 ## Hardening in the codebase
 
 - All SQL uses bound parameters; user text is never put into a query

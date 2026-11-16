@@ -44,11 +44,12 @@ Editor setup (including Neovim) is in [docs/development.md](docs/development.md)
 | Job | What it does |
 |---|---|
 | `clang-format` | every `.cpp`/`.hpp` is formatted |
-| `core` | builds and tests core with GCC, Clang and Apple Clang under ASan + UBSan, warnings as errors |
+| `core` | builds and tests core with GCC, Clang and Apple Clang under ASan + UBSan, and with MSVC on Windows; warnings as errors |
 | `clang-tidy` | static analysis of `core/` |
 | `app` | builds the Qt app (with and without whisper.cpp), runs tests, smoke-tests the binary |
 | `CodeQL` | security analysis, plus a weekly scheduled scan |
 | `pr-policy` | AI-disclosure and commit-message rules |
+| `Package & release` | builds the Windows, macOS and Linux packages and test-installs them (only on PRs touching app, core, build or installers) |
 
 ## Code style
 

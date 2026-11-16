@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Glimmer
+GenericName=Diary
+Comment=A small, private desktop diary
+Exec=glimmer %F
+Icon=glimmer
+Terminal=false
+Categories=Office;Utility;
+Keywords=diary;journal;notes;
+StartupWMClass=glimmer

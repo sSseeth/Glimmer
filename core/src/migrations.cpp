@@ -1,5 +1,7 @@
 #include "glimmer/migrations.hpp"
 
+#include "strings.hpp"
+
 #include <array>
 #include <string_view>
 
@@ -56,9 +58,9 @@ void migrate(Database& db) {
   const int current = db.userVersion();
   const int latest = latestSchemaVersion();
   if (current > latest) {
-    throw DatabaseError("database schema v" + std::to_string(current) +
-                            " is newer than this app supports (v" + std::to_string(latest) +
-                            "); please upgrade glimmer",
+    throw DatabaseError(detail::concat("database schema v", std::to_string(current),
+                                       " is newer than this app supports (v",
+                                       std::to_string(latest), "); please upgrade glimmer"),
                         0);
   }
   for (int version = current; version < latest; ++version) {

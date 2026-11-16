@@ -26,6 +26,11 @@ option(GLIMMER_ENABLE_SANITIZERS "Build with AddressSanitizer + UndefinedBehavio
 option(GLIMMER_WARNINGS_AS_ERRORS "Treat compiler warnings as errors in core/ and tests/" ON)
 option(GLIMMER_APP_WARNINGS_AS_ERRORS "Treat compiler warnings as errors in app/" OFF)
 
+# MSVC: sources are UTF-8 (the UI uses symbols like ✎ ♪ ▦), and use the
+# standard-conforming preprocessor (the legacy one mangles raw string
+# literals passed to macros, e.g. in the GoogleTest assertions).
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/utf-8> $<$<CXX_COMPILER_ID:MSVC>:/Zc:preprocessor>)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CompilerWarnings)
 include(Sanitizers)

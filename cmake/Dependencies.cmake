@@ -41,6 +41,17 @@ if(GLIMMER_WITH_WHISPER)
     set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(WHISPER_BUILD_SERVER OFF CACHE BOOL "" FORCE)
+    # Release binaries must run on any user's machine:
+    #  - static libraries, so there is nothing extra to ship or find at runtime;
+    #  - no -march=native, which would tie the binary to the CI runner's CPU
+    #    (x86-64 builds still use AVX2, i.e. any CPU from ~2013 onwards);
+    #  - no OpenMP, so we don't have to bundle an OpenMP runtime.
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    set(GGML_NATIVE OFF CACHE BOOL "" FORCE)
+    set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
+    # On macOS, compile the Metal GPU kernels into the binary instead of
+    # loading a .metal file from disk at runtime.
+    set(GGML_METAL_EMBED_LIBRARY ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(whisper)
   endif()
 endif()

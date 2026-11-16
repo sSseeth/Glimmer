@@ -1,5 +1,7 @@
 #include "glimmer/media_library.hpp"
 
+#include "strings.hpp"
+
 #include <algorithm>
 #include <cctype>
 #include <chrono>
@@ -41,13 +43,13 @@ std::string MediaLibrary::uniqueName(std::string_view folder, std::string_view e
   std::random_device device;
   std::uniform_int_distribution<unsigned> distribution(0, 0xFFFFFF);
   for (int attempt = 0; attempt < 100; ++attempt) {
-    const std::string name = std::string{folder} + "/" + std::to_string(millis) + "-" +
-                             std::to_string(distribution(device)) + ext;
+    const std::string name = detail::concat(folder, "/", std::to_string(millis), "-",
+                                            std::to_string(distribution(device)), ext);
     if (!fs::exists(root_ / name)) {
       return name;
     }
   }
-  throw MediaError("could not find a free file name in " + std::string{folder});
+  throw MediaError(detail::concat("could not find a free file name in ", folder));
 }
 
 std::string MediaLibrary::importImage(const fs::path& source) {
@@ -66,14 +68,14 @@ std::string MediaLibrary::newAudioPath(std::string_view extension) {
 fs::path MediaLibrary::resolve(std::string_view relativePath) const {
   const fs::path relative{std::string{relativePath}};
   if (relative.empty() || relative.is_absolute()) {
-    throw MediaError("media paths must be relative: '" + std::string{relativePath} + "'");
+    throw MediaError(detail::concat("media paths must be relative: '", relativePath, "'"));
   }
   const auto candidate = (root_ / relative).lexically_normal();
   // The normalized path must still start with the root.
   const auto firstDifference =
       std::mismatch(root_.begin(), root_.end(), candidate.begin(), candidate.end());
   if (firstDifference.first != root_.end()) {
-    throw MediaError("media path escapes the library: '" + std::string{relativePath} + "'");
+    throw MediaError(detail::concat("media path escapes the library: '", relativePath, "'"));
   }
   return candidate;
 }
